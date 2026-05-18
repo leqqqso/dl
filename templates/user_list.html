@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }}'s {{ list_type | capitalize }} — MyApp{% endblock %}
+
+{% block content %}
+<div style="max-width:520px; margin:0 auto;">
+
+  <a href="/u/{{ user.username }}" class="text-decoration-none d-inline-flex align-items-center gap-1 mb-3"
+     style="font-size:.88rem; color:var(--muted)">&#8592; {{ user.username }}</a>
+
+  <div class="card">
+    <div class="card-body px-4 py-3">
+      <h6 class="fw-bold mb-3">
+        {% if list_type == "followers" %}Subscribers{% else %}Subscriptions{% endif %}
+        <span class="text-muted fw-normal" style="font-size:.85rem">({{ users|length }})</span>
+      </h6>
+
+      {% if users %}
+      <div class="d-flex flex-column gap-0">
+        {% for u in users %}
+        <div class="d-flex align-items-center gap-3 py-2
+                    {% if not loop.last %}border-bottom{% endif %}">
+          <a href="/u/{{ u.username }}" class="text-decoration-none">
+            <div class="av av-sm">
+              {% if u.avatar %}
+                <img src="{{ url_for('static', filename='uploads/' ~ u.avatar) }}" alt="">
+              {% else %}
+                {{ u.username[0].upper() }}
+              {% endif %}
+            </div>
+          </a>
+          <a href="/u/{{ u.username }}" class="author-link flex-grow-1">
+            {{ u.username }}
+            <span class="profile-id-badge ms-1">#{{ u.id }}</span>
+          </a>
+          {% if viewer and viewer.id != u.id %}
+            {% if viewer.is_following(u) %}
+            <form method="POST" action="/unfollow/{{ u.username }}">
+              <button class="btn btn-sm btn-outline-secondary">Unfollow</button>
+            </form>
+            {% else %}
+            <form method="POST" action="/follow/{{ u.username }}">
+              <button class="btn btn-sm btn-primary">Follow</button>
+            </form>
+            {% endif %}
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">&#128100;</div>
+        <p>{% if list_type == "followers" %}No subscribers yet.{% else %}Not following anyone yet.{% endif %}</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.title }} — Forum{% endblock %}
+
+{% block content %}
+<div class="forum-wrap">
+
+  <a href="/forum" class="btn btn-primary btn-sm mb-2"
+     style="text-decoration:none">&#8592; Back to Forum</a>
+
+  {# ── Original post ── #}
+  <div class="forum-window mb-3">
+    <div class="forum-titlebar">
+      <span class="forum-titlebar-icon">&#128196;</span>
+      {{ topic.title }}
+      <div class="forum-titlebar-btns">
+        <span class="win-titlebtn">&#8722;</span>
+        <span class="win-titlebtn">&#9633;</span>
+        <span class="win-titlebtn win-titlebtn-close">&#10005;</span>
+      </div>
+    </div>
+    <div class="forum-window-body">
+      <div class="forum-post forum-post-op">
+        <div class="forum-post-sidebar">
+          <div class="av av-sm mb-1">
+            {% if topic.author.avatar %}
+              <img src="{{ url_for('static', filename='uploads/' ~ topic.author.avatar) }}" alt="">
+            {% else %}
+              {{ topic.author.username[0].upper() }}
+            {% endif %}
+          </div>
+          <a href="/u/{{ topic.author.username }}" class="forum-post-username">{{ topic.author.username }}</a>
+          <span class="forum-post-role">Member</span>
+          <span class="forum-post-joindate">Posts: {{ topic.author.forum_topics|length + topic.author.forum_comments|length }}</span>
+        </div>
+        <div class="forum-post-body">
+          <div class="forum-post-meta">
+            &#128197; {{ topic.created_at.strftime("%d %b %Y, %H:%M") }}
+          </div>
+          <div class="forum-post-text">{{ topic.body }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Replies ── #}
+  {% if comments %}
+  <div class="forum-window mb-3">
+    <div class="forum-titlebar">
+      <span class="forum-titlebar-icon">&#128172;</span>
+      Replies ({{ comments|length }})
+    </div>
+    <div class="forum-window-body p-0">
+      {% for c in comments %}
+      <div class="forum-post {% if not loop.last %}forum-post-divider{% endif %}">
+        <div class="forum-post-sidebar">
+          <div class="av av-sm mb-1">
+            {% if c.author.avatar %}
+              <img src="{{ url_for('static', filename='uploads/' ~ c.author.avatar) }}" alt="">
+            {% else %}
+              {{ c.author.username[0].upper() }}
+            {% endif %}
+          </div>
+          <a href="/u/{{ c.author.username }}" class="forum-post-username">{{ c.author.username }}</a>
+          <span class="forum-post-role">Member</span>
+        </div>
+        <div class="forum-post-body">
+          <div class="forum-post-meta">
+            #{{ loop.index }} &nbsp;&#128197; {{ c.created_at.strftime("%d %b %Y, %H:%M") }}
+          </div>
+          <div class="forum-post-text">{{ c.body }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Reply form ── #}
+  <div class="forum-window">
+    <div class="forum-titlebar">
+      <span class="forum-titlebar-icon">&#128221;</span>
+      {% if viewer %}Post a Reply{% else %}Sign in to Reply{% endif %}
+    </div>
+    <div class="forum-window-body">
+      {% if viewer %}
+      <form method="POST" action="/forum/{{ topic.id }}">
+        <div class="mb-2">
+          <textarea name="body" class="form-control" rows="5" maxlength="5000" required
+                    placeholder="Write your reply…"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Post Reply</button>
+      </form>
+      {% else %}
+      <p style="font-size:12px; margin:0">
+        <a href="/login">Sign in</a> to post a reply.
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

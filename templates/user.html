@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}{{ username }} — MyApp{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+
+  <div class="card mb-3 overflow-hidden">
+    <div class="profile-banner" id="profileBanner"
+         {% if user.banner_color %}style="background:{{ user.banner_color }}"{% endif %}>
+      <label class="banner-edit-btn" for="bannerColorInput" title="Change banner color">
+        &#127912; Color
+      </label>
+      <form method="POST" action="/settings/banner-color" id="bannerColorForm">
+        <input type="color" id="bannerColorInput" name="color"
+               value="{{ user.banner_color or '#7c3aed' }}" class="d-none">
+      </form>
+    </div>
+    <div class="card-body px-4 pb-4">
+
+      <div class="d-flex align-items-end gap-3 mt-n4 mb-4">
+        <label class="profile-avatar-wrap" for="avatarInput" title="Change photo">
+          <div class="av av-lg">
+            {% if avatar %}
+              <img src="{{ url_for('static', filename='uploads/' ~ avatar) }}" alt="">
+            {% else %}
+              {{ username[0].upper() }}
+            {% endif %}
+          </div>
+          <div class="profile-avatar-overlay">&#128247;</div>
+        </label>
+        <form method="POST" action="/upload-avatar" enctype="multipart/form-data" id="avatarForm">
+          <input type="file" id="avatarInput" name="avatar" accept="image/*" class="d-none">
+        </form>
+        <div class="flex-grow-1 pb-1">
+          <h4 class="fw-bold mb-0">{{ username }}</h4>
+          <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+            <span class="pill">Member</span>
+            <span class="profile-id-badge">#{{ user.id }}</span>
+            <span class="points-badge" title="Achievement points">
+              &#9889; {{ user.points }} pts
+            </span>
+          </div>
+          {% if achievements %}
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            {% for ach in achievements %}
+            {% set d = achievement_defs[ach.kind] %}
+            <span class="achievement-badge" title="{{ d.label }} (+{{ d.points }} pts)">
+              {{ d.icon|safe }} {{ d.label }}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <a href="/logout" class="btn btn-sm btn-outline-danger">Log out</a>
+      </div>
+
+      <div class="row g-2">
+        <div class="col-4"><div class="stat-box"><div class="stat-num">{{ posts|length }}</div><div class="stat-label">Posts</div></div></div>
+        <div class="col-4">
+          <a href="/u/{{ username }}/followers" class="text-decoration-none">
+            <div class="stat-box stat-box-link"><div class="stat-num">{{ followers_count }}</div><div class="stat-label">Subscribers</div></div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="/u/{{ username }}/following" class="text-decoration-none">
+            <div class="stat-box stat-box-link"><div class="stat-num">{{ following_count }}</div><div class="stat-label">Subscriptions</div></div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card compose-card mb-3">
+    <div class="card-body">
+      <form method="POST" action="/user" id="composeForm">
+        <div class="d-flex gap-3">
+          <div class="av av-md">{{ username[0].upper() }}</div>
+          <div class="flex-grow-1">
+            <textarea name="body" id="bodyInput" class="form-control"
+                      rows="2" maxlength="500"
+                      placeholder="Share something…"></textarea>
+            {% set g_id = "user" %}{% set g_btn_id = "postBtn" %}
+            {% include "_graffiti.html" %}
+            <hr class="compose-divider">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <span id="charCount" class="post-meta">0 / 500</span>
+                <button type="button" class="btn-draw"
+                        data-bs-toggle="collapse" data-bs-target="#userGraffiti">
+                  &#127912; Draw
+                </button>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm px-4"
+                      id="postBtn" disabled>Post</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <p class="section-label">Settings</p>
+
+  {# Change password #}
+  <div class="card mb-3">
+    <div class="card-body px-4 py-3">
+      <button class="btn-settings-toggle w-100 d-flex justify-content-between align-items-center"
+              type="button" data-bs-toggle="collapse" data-bs-target="#pwForm">
+        <span class="fw-semibold">&#128274; Change password</span>
+        <span class="text-muted" style="font-size:.85rem">&#8250;</span>
+      </button>
+      <div class="collapse mt-3" id="pwForm">
+        <form method="POST" action="/settings/password">
+          <div class="mb-2">
+            <label class="form-label form-label-sm">Current password</label>
+            <input type="password" name="current_password" class="form-control form-control-sm" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label form-label-sm">New password</label>
+            <input type="password" name="new_password" class="form-control form-control-sm" minlength="6" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label form-label-sm">Confirm new password</label>
+            <input type="password" name="confirm_password" class="form-control form-control-sm" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm px-4">Update password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {# 2FA #}
+  <div class="card mb-3">
+    <div class="card-body px-4 py-3">
+      <button class="btn-settings-toggle w-100 d-flex justify-content-between align-items-center"
+              type="button" data-bs-toggle="collapse" data-bs-target="#tfaSection">
+        <span class="fw-semibold">&#128241; Two-factor authentication</span>
+        {% if user.totp_enabled %}
+          <span class="badge bg-success ms-2">Enabled</span>
+        {% else %}
+          <span class="badge bg-secondary ms-2">Disabled</span>
+        {% endif %}
+      </button>
+      <div class="collapse mt-3" id="tfaSection">
+        {% if user.totp_enabled %}
+          <p class="text-muted small mb-3">2FA is active. You will be asked for a code from your authenticator app each time you log in.</p>
+          <form method="POST" action="/settings/2fa/disable">
+            <div class="mb-2">
+              <label class="form-label form-label-sm">Enter your password to disable</label>
+              <input type="password" name="password" class="form-control form-control-sm" required>
+            </div>
+            <button type="submit" class="btn btn-outline-danger btn-sm">Disable 2FA</button>
+          </form>
+        {% else %}
+          <p class="text-muted small mb-3">Add an extra layer of security. You'll need an authenticator app (Google Authenticator, Authy, etc.).</p>
+          <a href="/settings/2fa/setup" class="btn btn-primary btn-sm">Set up 2FA</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <p class="section-label">Your posts</p>
+
+  {% if posts %}
+  <div class="card">
+    <div class="card-body px-4 py-3">
+      {% for post in posts %}
+      <div class="post-item">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="flex-grow-1 min-w-0">
+            {% if post.body %}<p class="post-body mb-1">{{ post.body }}</p>{% endif %}
+            {% if post.image %}
+            <div class="{% if post.body %}mt-1{% endif %} mb-1">
+              <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                   class="post-drawing" alt="graffiti">
+            </div>
+            {% endif %}
+            <span class="post-meta">{{ post.created_at.strftime("%b %d, %Y · %H:%M") }}</span>
+          </div>
+          <form method="POST" action="/post/{{ post.id }}/delete" class="ms-3 flex-shrink-0">
+            <input type="hidden" name="next" value="/user">
+            <button type="submit" class="btn-delete-post" title="Delete post"
+                    onclick="return confirm('Delete this post?')">&#10005;</button>
+          </form>
+        </div>
+      </div>
+      {% if not loop.last %}<hr class="post-divider">{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">&#128203;</div>
+      <p>Nothing posted yet.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  const textarea = document.getElementById('bodyInput');
+  const counter  = document.getElementById('charCount');
+  const btn      = document.getElementById('postBtn');
+  textarea.addEventListener('input', () => {
+    counter.textContent = textarea.value.length + ' / 500';
+    if (textarea.value.trim().length > 0) btn.disabled = false;
+    else if (!document.getElementById('userDrawingData').value) btn.disabled = true;
+  });
+  document.getElementById('avatarInput').addEventListener('change', function () {
+    if (this.files.length) document.getElementById('avatarForm').submit();
+  });
+  document.getElementById('bannerColorInput').addEventListener('input', function () {
+    document.getElementById('profileBanner').style.background = this.value;
+  });
+  document.getElementById('bannerColorInput').addEventListener('change', function () {
+    document.getElementById('bannerColorForm').submit();
+  });
+</script>
+{% endblock %}

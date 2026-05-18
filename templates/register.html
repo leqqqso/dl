@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Register — MyApp{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+
+    <div class="auth-card-header">
+      <div class="auth-icon">&#128100;</div>
+      <h2>Create account</h2>
+      <p>Join MyApp today</p>
+    </div>
+
+    <div class="auth-card-body">
+      <form method="POST" action="/register" novalidate>
+        <div class="mb-3">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" id="username" name="username"
+                 class="form-control form-control-lg"
+                 placeholder="choose a username" required autofocus>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" id="password" name="password"
+                 class="form-control form-control-lg"
+                 placeholder="••••••••" required>
+        </div>
+        <div class="mb-4">
+          <label for="confirm" class="form-label">Confirm Password</label>
+          <input type="password" id="confirm" name="confirm"
+                 class="form-control form-control-lg"
+                 placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-100">Create account</button>
+      </form>
+    </div>
+
+    <div class="auth-card-footer">
+      Already a member? <a href="/login">Sign in</a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

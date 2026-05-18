@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel — MyApp{% endblock %}
+
+{% block content %}
+<div style="max-width:1060px; margin:0 auto;">
+
+  {# ── Header window ── #}
+  <div class="forum-window mb-3">
+    <div class="forum-titlebar">
+      <span class="forum-titlebar-icon">&#9881;</span>
+      System Control Panel
+      <div class="forum-titlebar-btns">
+        <span class="win-titlebtn">&#8722;</span>
+        <span class="win-titlebtn">&#9633;</span>
+        <span class="win-titlebtn win-titlebtn-close">&#10005;</span>
+      </div>
+    </div>
+    <div class="forum-window-body" style="padding:8px 12px;">
+      <span class="badge bg-danger me-2" style="font-size:11px;">ADMIN</span>
+      <span style="font-size:12px;">Logged in as <strong>{{ session.username }}</strong></span>
+    </div>
+  </div>
+
+  {# ── Stats row ── #}
+  <div class="row g-2 mb-3">
+    {% set stat_items = [
+      ("&#128100;", "Users",           stats.users),
+      ("&#127942;", "Challenges",      stats.challenges),
+      ("&#128203;", "Posts",           stats.posts),
+      ("&#128172;", "Messages",        stats.messages),
+      ("&#128077;", "Reactions",       stats.reactions),
+      ("&#128196;", "Forum Topics",    stats.forum_topics),
+      ("&#128172;", "Forum Replies",   stats.forum_comments),
+    ] %}
+    {% for icon, label, val in stat_items %}
+    <div class="col-6 col-sm-4 col-md">
+      <div class="admin-stat-box">
+        <div class="admin-stat-icon">{{ icon|safe }}</div>
+        <div class="admin-stat-num">{{ val }}</div>
+        <div class="admin-stat-label">{{ label }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {# ── Tabs ── #}
+  <ul class="nav nav-tabs mb-0" id="adminTabs">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabUsers">
+        &#128100; Users <span class="badge bg-secondary ms-1">{{ stats.users }}</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabChallenges">
+        &#127942; Challenges <span class="badge bg-secondary ms-1">{{ stats.challenges }}</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPosts">
+        &#128203; Posts <span class="badge bg-secondary ms-1">{{ stats.posts }}</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabForum">
+        &#128196; Forum <span class="badge bg-secondary ms-1">{{ stats.forum_topics }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content forum-window" style="border-top:none;">
+
+    {# ══ Users ══ #}
+    <div class="tab-pane fade show active" id="tabUsers">
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>User</th>
+              <th>Points</th>
+              <th>Posts</th>
+              <th>Followers</th>
+              <th>Topics</th>
+              <th>2FA</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td>#{{ u.id }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="av av-sm">
+                    {% if u.avatar %}
+                      <img src="{{ url_for('static', filename='uploads/' ~ u.avatar) }}" alt="">
+                    {% else %}
+                      {{ u.username[0].upper() }}
+                    {% endif %}
+                  </div>
+                  <a href="/u/{{ u.username }}" class="author-link">{{ u.username }}</a>
+                </div>
+              </td>
+              <td>&#9889; {{ u.points }}</td>
+              <td>{{ u.posts|length }}</td>
+              <td>{{ u.followers.count() }}</td>
+              <td>{{ u.forum_topics|length }}</td>
+              <td>
+                {% if u.totp_enabled %}
+                  <span class="badge bg-success">On</span>
+                {% else %}
+                  <span class="badge bg-secondary">Off</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if u.is_admin %}
+                  <span class="badge bg-danger">Admin</span>
+                {% else %}
+                  <span class="badge bg-secondary">User</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <form method="POST" action="/admin/toggle-admin/{{ u.id }}">
+                    <button class="btn btn-xs btn-outline-secondary"
+                            title="{{ 'Revoke admin' if u.is_admin else 'Grant admin' }}">
+                      {{ '&#128274;' if u.is_admin else '&#9881;' }}
+                    </button>
+                  </form>
+                  <form method="POST" action="/admin/delete/user/{{ u.id }}"
+                        onsubmit="return confirm('Delete user {{ u.username }}? This cannot be undone.')">
+                    <button class="btn btn-xs btn-outline-danger" title="Delete">&#128465;</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ══ Challenges ══ #}
+    <div class="tab-pane fade" id="tabChallenges">
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Creator</th>
+              <th>Joined</th>
+              <th>Completed</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ch in challenges %}
+            <tr>
+              <td>#{{ ch.id }}</td>
+              <td>
+                <a href="/challenges/{{ ch.id }}" class="forum-topic-link">
+                  {{ ch.title[:55] }}{% if ch.title|length > 55 %}…{% endif %}
+                </a>
+              </td>
+              <td><span class="cat-chip cat-{{ ch.category|lower }}">{{ ch.category }}</span></td>
+              <td><a href="/u/{{ ch.creator.username }}" class="author-link">{{ ch.creator.username }}</a></td>
+              <td>{{ ch.participants.count() }}</td>
+              <td>{{ ch.participants.filter_by().count() }}</td>
+              <td style="white-space:nowrap">{{ ch.created_at.strftime("%d.%m.%Y") }}</td>
+              <td>
+                <form method="POST" action="/admin/delete/challenge/{{ ch.id }}"
+                      onsubmit="return confirm('Delete challenge \'{{ ch.title }}\'?')">
+                  <button class="btn btn-xs btn-outline-danger">&#128465;</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ══ Posts ══ #}
+    <div class="tab-pane fade" id="tabPosts">
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Author</th>
+              <th>Content</th>
+              <th>Image</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in posts %}
+            <tr>
+              <td>#{{ p.id }}</td>
+              <td><a href="/u/{{ p.author.username }}" class="author-link">{{ p.author.username }}</a></td>
+              <td style="max-width:300px;">
+                {% if p.body %}
+                  {{ p.body[:100] }}{% if p.body|length > 100 %}…{% endif %}
+                {% else %}
+                  <span style="color:var(--subtle);font-style:italic">drawing only</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if p.image %}
+                  <img src="{{ url_for('static', filename='uploads/' ~ p.image) }}"
+                       style="width:36px;height:36px;object-fit:cover;border:1px solid var(--b-dark);">
+                {% endif %}
+              </td>
+              <td style="white-space:nowrap">{{ p.created_at.strftime("%d.%m.%Y") }}</td>
+              <td>
+                <form method="POST" action="/admin/delete/post/{{ p.id }}"
+                      onsubmit="return confirm('Delete this post?')">
+                  <button class="btn btn-xs btn-outline-danger">&#128465;</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ══ Forum ══ #}
+    <div class="tab-pane fade" id="tabForum">
+
+      {# Topics sub-section #}
+      <div class="admin-section-label">&#128196; Topics ({{ stats.forum_topics }})</div>
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Replies</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in forum_topics %}
+            <tr>
+              <td>#{{ t.id }}</td>
+              <td>
+                <a href="/forum/{{ t.id }}" class="forum-topic-link">
+                  {{ t.title[:60] }}{% if t.title|length > 60 %}…{% endif %}
+                </a>
+              </td>
+              <td><a href="/u/{{ t.author.username }}" class="author-link">{{ t.author.username }}</a></td>
+              <td>{{ t.comments.count() }}</td>
+              <td style="white-space:nowrap">{{ t.created_at.strftime("%d.%m.%Y") }}</td>
+              <td>
+                <form method="POST" action="/admin/delete/forum-topic/{{ t.id }}"
+                      onsubmit="return confirm('Delete topic \'{{ t.title }}\'? All replies will be deleted too.')">
+                  <button class="btn btn-xs btn-outline-danger">&#128465;</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center" style="color:var(--subtle);padding:16px;">No topics yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {# Comments sub-section #}
+      <div class="admin-section-label mt-2">&#128172; Replies ({{ stats.forum_comments }})</div>
+      <div class="table-responsive">
+        <table class="table admin-table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Author</th>
+              <th>Topic</th>
+              <th>Reply</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in forum_comments %}
+            <tr>
+              <td>#{{ c.id }}</td>
+              <td><a href="/u/{{ c.author.username }}" class="author-link">{{ c.author.username }}</a></td>
+              <td>
+                <a href="/forum/{{ c.topic_id }}" class="forum-topic-link">
+                  {{ c.topic.title[:35] }}{% if c.topic.title|length > 35 %}…{% endif %}
+                </a>
+              </td>
+              <td style="max-width:280px;">
+                {{ c.body[:100] }}{% if c.body|length > 100 %}…{% endif %}
+              </td>
+              <td style="white-space:nowrap">{{ c.created_at.strftime("%d.%m.%Y") }}</td>
+              <td>
+                <form method="POST" action="/admin/delete/forum-comment/{{ c.id }}"
+                      onsubmit="return confirm('Delete this reply?')">
+                  <button class="btn btn-xs btn-outline-danger">&#128465;</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center" style="color:var(--subtle);padding:16px;">No replies yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}

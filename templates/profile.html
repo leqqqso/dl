@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ user.username }} — MyApp{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+
+  <div class="card mb-3 overflow-hidden">
+    <div class="profile-banner" {% if user.banner_color %}style="background:{{ user.banner_color }}"{% endif %}></div>
+    <div class="card-body px-4 pb-4">
+
+      <div class="d-flex align-items-end gap-3 mt-n4 mb-4">
+        <div class="av av-lg">
+          {% if user.avatar %}
+            <img src="{{ url_for('static', filename='uploads/' ~ user.avatar) }}" alt="">
+          {% else %}
+            {{ user.username[0].upper() }}
+          {% endif %}
+        </div>
+        <div class="flex-grow-1 pb-1">
+          <h4 class="fw-bold mb-0">{{ user.username }}</h4>
+          <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+            <span class="pill">Member</span>
+            <span class="profile-id-badge">#{{ user.id }}</span>
+            <span class="points-badge" title="Achievement points">
+              &#9889; {{ user.points }} pts
+            </span>
+          </div>
+          {% if achievements %}
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            {% for ach in achievements %}
+            {% set d = achievement_defs[ach.kind] %}
+            <span class="achievement-badge" title="{{ d.label }} (+{{ d.points }} pts)">
+              {{ d.icon|safe }} {{ d.label }}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        {% if is_own %}
+          <a href="/user" class="btn btn-sm btn-outline-secondary">Edit profile</a>
+        {% elif session.username %}
+          <a href="/messages/{{ user.username }}" class="btn btn-sm btn-outline-secondary">Message</a>
+          {% if is_following %}
+            <form method="POST" action="/unfollow/{{ user.username }}">
+              <button class="btn btn-sm btn-outline-secondary">Unfollow</button>
+            </form>
+          {% else %}
+            <form method="POST" action="/follow/{{ user.username }}">
+              <button class="btn btn-sm btn-primary">Follow</button>
+            </form>
+          {% endif %}
+        {% else %}
+          <a href="/login" class="btn btn-sm btn-primary">Follow</a>
+        {% endif %}
+      </div>
+
+      <div class="row g-2">
+        <div class="col-4"><div class="stat-box"><div class="stat-num">{{ posts|length }}</div><div class="stat-label">Posts</div></div></div>
+        <div class="col-4">
+          <a href="/u/{{ user.username }}/followers" class="text-decoration-none">
+            <div class="stat-box stat-box-link"><div class="stat-num">{{ followers_count }}</div><div class="stat-label">Subscribers</div></div>
+          </a>
+        </div>
+        <div class="col-4">
+          <a href="/u/{{ user.username }}/following" class="text-decoration-none">
+            <div class="stat-box stat-box-link"><div class="stat-num">{{ following_count }}</div><div class="stat-label">Subscriptions</div></div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-label">Posts</p>
+
+  {% if posts %}
+  <div class="card">
+    <div class="card-body px-4 py-3">
+      {% for post in posts %}
+      <div class="post-item">
+        {% if post.body %}<p class="post-body mb-1">{{ post.body }}</p>{% endif %}
+        {% if post.image %}
+        <div class="{% if post.body %}mt-1{% endif %} mb-1">
+          <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+               class="post-drawing" alt="graffiti">
+        </div>
+        {% endif %}
+        <span class="post-meta">{{ post.created_at.strftime("%b %d, %Y · %H:%M") }}</span>
+      </div>
+      {% if not loop.last %}<hr class="post-divider">{% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">&#128203;</div>
+      <p>No posts yet.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

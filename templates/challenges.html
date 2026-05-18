@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Challenges — MyApp{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:0 auto;">
+
+  {# Page header #}
+  <div class="challenge-hero mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">Challenges</h3>
+      <p class="mb-0" style="opacity:.8">Take on a challenge, invite others, and track progress together.</p>
+    </div>
+    {% if viewer %}
+    <button class="btn btn-light fw-semibold" data-bs-toggle="collapse" data-bs-target="#newForm">
+      + New challenge
+    </button>
+    {% else %}
+    <a href="/login" class="btn btn-light fw-semibold">Join to participate</a>
+    {% endif %}
+  </div>
+
+  {# Create form #}
+  {% if viewer %}
+  <div class="collapse mb-4" id="newForm">
+    <div class="card">
+      <div class="card-body p-4">
+        <h6 class="fw-bold mb-3">Create a challenge</h6>
+        <form method="POST" action="/challenges">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control"
+                   placeholder="e.g. Read 10 books this year" maxlength="120" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3"
+                      maxlength="500" placeholder="What's the challenge about?"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Deadline <span class="text-muted fw-normal">(optional)</span></label>
+            <input type="date" name="deadline" class="form-control" min="{{ today.isoformat() }}">
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Category</label>
+            <div class="d-flex flex-wrap gap-2">
+              {% for cat in categories %}
+              <label class="cat-radio">
+                <input type="radio" name="category" value="{{ cat }}"
+                       {% if loop.first %}checked{% endif %} class="d-none">
+                <span class="cat-chip cat-{{ cat|lower }}">{{ cat }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="collapse" data-bs-target="#newForm">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm px-4">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# Category filter #}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="/challenges"
+       class="cat-chip {% if not cat_filter %}cat-active{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="/challenges?cat={{ cat }}"
+       class="cat-chip cat-{{ cat|lower }} {% if cat_filter == cat %}cat-active{% endif %}">
+      {{ cat }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {# Challenge cards #}
+  {% if challenges %}
+  <div class="row g-3">
+    {% for ch in challenges %}
+    <div class="col-md-6">
+      <a href="/challenges/{{ ch.id }}" class="text-decoration-none">
+        <div class="card card-hover challenge-card">
+          <div class="challenge-card-accent cat-bar-{{ ch.category|lower }}"></div>
+          <div class="card-body px-4 py-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="cat-chip cat-{{ ch.category|lower }}">{{ ch.category }}</span>
+              <span class="post-meta">{{ ch.participants.count() }} joined</span>
+            </div>
+            <h6 class="fw-bold text-dark mb-1">{{ ch.title }}</h6>
+            <p class="post-meta mb-2">
+              {{ ch.description[:100] }}{% if ch.description|length > 100 %}…{% endif %}
+            </p>
+            {% if ch.deadline %}
+            <p class="mb-3">
+              <span class="deadline-chip {% if ch.deadline < today %}deadline-expired{% endif %}">
+                &#128197; {{ ch.deadline.strftime("%b %d, %Y") }}
+              </span>
+            </p>
+            {% endif %}
+            <div class="d-flex align-items-center gap-2">
+              <div class="av av-sm">
+                {% if ch.creator.avatar %}
+                  <img src="{{ url_for('static', filename='uploads/' ~ ch.creator.avatar) }}" alt="">
+                {% else %}
+                  {{ ch.creator.username[0].upper() }}
+                {% endif %}
+              </div>
+              <span style="font-size:.8rem; color:var(--muted)">{{ ch.creator.username }}</span>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">&#127942;</div>
+      <p>No challenges yet{% if cat_filter %} in this category{% endif %}.<br>
+        {% if viewer %}Be the first to create one!{% endif %}
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

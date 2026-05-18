@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}{{ challenge.title }} — Challenges{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:0 auto;">
+
+  {# Back #}
+  <a href="/challenges" class="btn-back text-decoration-none d-inline-flex align-items-center gap-1 mb-3"
+     style="font-size:.88rem; color:var(--muted)">
+    &#8592; All challenges
+  </a>
+
+  {# Main card #}
+  <div class="card overflow-hidden mb-3">
+    <div class="challenge-card-accent cat-bar-{{ challenge.category|lower }}" style="height:6px"></div>
+    <div class="card-body px-4 py-4">
+
+      <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+        <div>
+          <span class="cat-chip cat-{{ challenge.category|lower }} mb-2 d-inline-block">
+            {{ challenge.category }}
+          </span>
+          <h4 class="fw-bold mb-1">{{ challenge.title }}</h4>
+          <p class="text-muted mb-2">{{ challenge.description }}</p>
+          {% if challenge.deadline %}
+            {% set expired = challenge.deadline < today %}
+            <span class="deadline-chip {% if expired %}deadline-expired{% endif %}">
+              &#128197; Deadline: {{ challenge.deadline.strftime("%b %d, %Y") }}
+              {% if expired %} — Ended{% endif %}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 mb-4">
+        <a href="/u/{{ challenge.creator.username }}" class="d-flex align-items-center gap-2 text-decoration-none">
+          <div class="av av-sm">
+            {% if challenge.creator.avatar %}
+              <img src="{{ url_for('static', filename='uploads/' ~ challenge.creator.avatar) }}" alt="">
+            {% else %}
+              {{ challenge.creator.username[0].upper() }}
+            {% endif %}
+          </div>
+          <span style="font-size:.85rem; color:var(--muted)">
+            Created by <strong class="text-dark">{{ challenge.creator.username }}</strong>
+          </span>
+        </a>
+        <span class="post-meta ms-2">· {{ challenge.created_at.strftime("%b %d, %Y") }}</span>
+      </div>
+
+      <div class="row g-3 text-center mb-4">
+        <div class="col-4">
+          <div class="stat-box">
+            <div class="stat-num">{{ participants|length }}</div>
+            <div class="stat-label">Joined</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-box">
+            <div class="stat-num">{{ completed|length }}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="stat-box">
+            {% set pct = ((completed|length / participants|length * 100)|int) if participants|length else 0 %}
+            <div class="stat-num">{{ pct }}%</div>
+            <div class="stat-label">Rate</div>
+          </div>
+        </div>
+      </div>
+
+      {# Action buttons #}
+      {% if viewer %}
+        {% if viewer_joined %}
+          <div class="d-flex flex-column gap-2">
+            {% if not viewer_completed %}
+            <div>
+              <button class="btn btn-primary mb-2" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#proofForm">
+                &#10003; Mark as completed
+              </button>
+              <div class="collapse" id="proofForm">
+                <div class="card card-body p-3 mb-2">
+                  <p class="small text-muted mb-2">Upload a photo or video as proof to complete this challenge.</p>
+                  <form method="POST" action="/challenges/{{ challenge.id }}/complete"
+                        enctype="multipart/form-data">
+                    <div class="mb-2">
+                      <input type="file" name="proof" class="form-control form-control-sm"
+                             accept="image/*,video/mp4,video/quicktime,video/webm" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm px-4">Submit proof</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <span class="btn btn-success disabled">&#10003; Completed</span>
+            {% endif %}
+            {% if not viewer_completed %}
+            <div>
+              <form method="POST" action="/challenges/{{ challenge.id }}/leave">
+                <button class="btn btn-outline-secondary btn-sm">Leave</button>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+        {% else %}
+          <form method="POST" action="/challenges/{{ challenge.id }}/join">
+            <button class="btn btn-primary px-4">Join challenge</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <a href="/login" class="btn btn-primary px-4">Sign in to join</a>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {# Reactions #}
+  <div class="card mb-3">
+    <div class="card-body px-4 py-3 d-flex align-items-center gap-2">
+      {% for emoji, kind in [("👍", "up"), ("👎", "down"), ("❤️", "heart")] %}
+        {% set count = reaction_counts.get(kind, 0) %}
+        {% set active = viewer and kind in viewer_reactions %}
+        {% if viewer %}
+        <form method="POST" action="/challenges/{{ challenge.id }}/react">
+          <input type="hidden" name="reaction" value="{{ kind }}">
+          <button class="reaction-btn {% if active %}reaction-active{% endif %}">
+            {{ emoji }} {% if count %}<span class="reaction-count">{{ count }}</span>{% endif %}
+          </button>
+        </form>
+        {% else %}
+        <a href="/login" class="reaction-btn">
+          {{ emoji }} {% if count %}<span class="reaction-count">{{ count }}</span>{% endif %}
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {# Participants #}
+  <div class="card">
+    <div class="card-body px-4 py-3">
+      <h6 class="fw-bold mb-3">
+        Participants
+        <span class="text-muted fw-normal" style="font-size:.85rem">
+          ({{ participants|length }})
+        </span>
+      </h6>
+
+      {% if participants %}
+      <div class="d-flex flex-column gap-0">
+        {% for p in participants %}
+        <div class="d-flex align-items-center gap-3 py-2
+                    {% if not loop.last %}border-bottom{% endif %}">
+          <a href="/u/{{ p.username }}" class="text-decoration-none">
+            <div class="av av-sm">
+              {% if p.avatar %}
+                <img src="{{ url_for('static', filename='uploads/' ~ p.avatar) }}" alt="">
+              {% else %}
+                {{ p.username[0].upper() }}
+              {% endif %}
+            </div>
+          </a>
+          <a href="/u/{{ p.username }}" class="author-link flex-grow-1">{{ p.username }}</a>
+          {% if p.id in completed_ids %}
+            {% set proof = proof_map.get(p.id) %}
+            <span class="completed-badge">&#10003; Done</span>
+            {% if proof %}
+              {% set proof_ext = proof.rsplit('.', 1)[-1] %}
+              {% if proof_ext in ['mp4', 'mov', 'webm'] %}
+                <a href="{{ url_for('static', filename='uploads/' ~ proof) }}"
+                   target="_blank" class="proof-link">&#127909; Proof</a>
+              {% else %}
+                <a href="{{ url_for('static', filename='uploads/' ~ proof) }}"
+                   target="_blank">
+                  <img src="{{ url_for('static', filename='uploads/' ~ proof) }}"
+                       class="proof-thumb" alt="proof">
+                </a>
+              {% endif %}
+            {% endif %}
+            {% set lc = like_counts.get(p.id, 0) %}
+            {% if viewer and viewer.id != p.id %}
+            <form method="POST" action="/challenges/{{ challenge.id }}/like/{{ p.id }}" class="d-inline">
+              <button class="completion-like-btn {% if p.id in viewer_liked %}completion-like-active{% endif %}">
+                &#10084; {% if lc %}<span>{{ lc }}</span>{% endif %}
+              </button>
+            </form>
+            {% elif lc %}
+            <span class="completion-like-count">&#10084; {{ lc }}</span>
+            {% endif %}
+          {% else %}
+            <span style="font-size:.78rem; color:var(--subtle)">In progress</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted mb-0" style="font-size:.9rem">No participants yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

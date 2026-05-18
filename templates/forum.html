@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Forum — MyApp{% endblock %}
+
+{% block content %}
+<div class="forum-wrap">
+
+  {# ── Header window ── #}
+  <div class="forum-window mb-3">
+    <div class="forum-titlebar">
+      <span class="forum-titlebar-icon">&#128172;</span>
+      Forum &mdash; Discussions
+      <div class="forum-titlebar-btns">
+        <span class="win-titlebtn">&#8722;</span>
+        <span class="win-titlebtn">&#9633;</span>
+        <span class="win-titlebtn win-titlebtn-close">&#10005;</span>
+      </div>
+    </div>
+    <div class="forum-window-body">
+      <p class="forum-desc">Welcome to the forum. Browse topics below or start a new discussion.</p>
+      {% if viewer %}
+        <button class="btn btn-primary btn-sm" type="button"
+                data-bs-toggle="collapse" data-bs-target="#newTopicForm">
+          &#43; New Topic
+        </button>
+      {% else %}
+        <a href="/login" class="btn btn-primary btn-sm">Sign in to post</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── New topic form ── #}
+  {% if viewer %}
+  <div class="collapse mb-3" id="newTopicForm">
+    <div class="forum-window">
+      <div class="forum-titlebar">
+        <span class="forum-titlebar-icon">&#128221;</span>
+        New Topic
+      </div>
+      <div class="forum-window-body">
+        <form method="POST" action="/forum">
+          <div class="mb-2">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" maxlength="200" required
+                   placeholder="Topic title…">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Message</label>
+            <textarea name="body" class="form-control" rows="5" maxlength="5000" required
+                      placeholder="What's on your mind?"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Post Topic</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Topic list window ── #}
+  <div class="forum-window">
+    <div class="forum-titlebar">
+      <span class="forum-titlebar-icon">&#128196;</span>
+      Topics ({{ topics|length }})
+    </div>
+    <div class="forum-window-body p-0">
+      {% if topics %}
+      <table class="forum-table w-100">
+        <thead>
+          <tr>
+            <th style="width:55%">Topic</th>
+            <th style="width:18%">Author</th>
+            <th style="width:12%" class="text-center">Replies</th>
+            <th style="width:15%">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for topic in topics %}
+          <tr class="forum-row">
+            <td>
+              <a href="/forum/{{ topic.id }}" class="forum-topic-link">
+                &#128196; {{ topic.title }}
+              </a>
+            </td>
+            <td>
+              <a href="/u/{{ topic.author.username }}" class="forum-author-link">
+                {{ topic.author.username }}
+              </a>
+            </td>
+            <td class="text-center forum-reply-count">
+              {{ comment_counts[topic.id] }}
+            </td>
+            <td class="forum-date">
+              {{ topic.created_at.strftime("%d.%m.%Y") }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">&#128172;</div>
+        <p>No topics yet. Be the first to post!</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{# Usage: set g_id and g_btn_id before including #}
+<input type="hidden" name="drawing_data" id="{{ g_id }}DrawingData">
+
+<div class="collapse" id="{{ g_id }}Graffiti">
+  <div class="graffiti-wrap">
+    <div class="graffiti-toolbar">
+      {# Color swatches #}
+      <div class="graffiti-colors">
+        <button type="button" class="color-sw" style="background:#1a1a1a" onclick="{{ g_id }}G.setColor('#1a1a1a')"></button>
+        <button type="button" class="color-sw" style="background:#ffffff;border:1.5px solid #d1d5db" onclick="{{ g_id }}G.setColor('#ffffff')"></button>
+        <button type="button" class="color-sw" style="background:#ef4444" onclick="{{ g_id }}G.setColor('#ef4444')"></button>
+        <button type="button" class="color-sw" style="background:#f97316" onclick="{{ g_id }}G.setColor('#f97316')"></button>
+        <button type="button" class="color-sw" style="background:#eab308" onclick="{{ g_id }}G.setColor('#eab308')"></button>
+        <button type="button" class="color-sw" style="background:#22c55e" onclick="{{ g_id }}G.setColor('#22c55e')"></button>
+        <button type="button" class="color-sw" style="background:#06b6d4" onclick="{{ g_id }}G.setColor('#06b6d4')"></button>
+        <button type="button" class="color-sw" style="background:#3b82f6" onclick="{{ g_id }}G.setColor('#3b82f6')"></button>
+        <button type="button" class="color-sw" style="background:#8b5cf6" onclick="{{ g_id }}G.setColor('#8b5cf6')"></button>
+        <button type="button" class="color-sw" style="background:#ec4899" onclick="{{ g_id }}G.setColor('#ec4899')"></button>
+        <label class="color-sw color-sw-picker" title="Custom color">
+          <input type="color" class="d-none" oninput="{{ g_id }}G.setColor(this.value)">
+        </label>
+      </div>
+      {# Sizes + tools #}
+      <div class="d-flex align-items-center gap-2 mt-2">
+        <div class="graffiti-sizes">
+          <button type="button" class="size-btn" onclick="{{ g_id }}G.setSize(2)" title="Thin"><span class="sz-dot" style="width:4px;height:4px"></span></button>
+          <button type="button" class="size-btn" onclick="{{ g_id }}G.setSize(5)" title="Medium"><span class="sz-dot" style="width:8px;height:8px"></span></button>
+          <button type="button" class="size-btn" onclick="{{ g_id }}G.setSize(14)" title="Thick"><span class="sz-dot" style="width:14px;height:14px"></span></button>
+        </div>
+        <div class="ms-auto d-flex gap-1">
+          <button type="button" class="gtool-btn" onclick="{{ g_id }}G.setPen()" title="Pen">&#9998;</button>
+          <button type="button" class="gtool-btn" onclick="{{ g_id }}G.setEraser()" title="Eraser">&#9723;</button>
+          <button type="button" class="gtool-btn" onclick="{{ g_id }}G.undo()" title="Undo">&#8617;</button>
+          <button type="button" class="gtool-btn" onclick="{{ g_id }}G.clear()" title="Clear">&#128465;</button>
+        </div>
+      </div>
+    </div>
+    <canvas id="{{ g_id }}Canvas" class="graffiti-canvas"></canvas>
+  </div>
+</div>
+
+<script>
+  var {{ g_id }}G = null;
+  document.getElementById('{{ g_id }}Graffiti').addEventListener('shown.bs.collapse', function () {
+    if (!{{ g_id }}G) {
+      requestAnimationFrame(function () {
+        {{ g_id }}G = initGraffiti('{{ g_id }}Canvas', '{{ g_id }}DrawingData', function () {
+          var btn = document.getElementById('{{ g_btn_id }}');
+          if (btn) btn.disabled = false;
+        });
+      });
+    }
+  });
+</script>

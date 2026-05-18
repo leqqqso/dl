@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ other.username }} — Messages{% endblock %}
+
+{% block content %}
+<div class="chat-wrap">
+
+  {# Header #}
+  <div class="chat-header card mb-0 rounded-bottom-0">
+    <div class="card-body px-4 py-3 d-flex align-items-center gap-3">
+      <a href="/messages" class="btn-back text-decoration-none">&#8592;</a>
+      <a href="/u/{{ other.username }}" class="text-decoration-none d-flex align-items-center gap-2">
+        <div class="av av-sm">
+          {% if other.avatar %}
+            <img src="{{ url_for('static', filename='uploads/' ~ other.avatar) }}" alt="">
+          {% else %}
+            {{ other.username[0].upper() }}
+          {% endif %}
+        </div>
+        <span class="fw-bold text-dark">{{ other.username }}</span>
+      </a>
+    </div>
+  </div>
+
+  {# Message thread #}
+  <div class="chat-body card rounded-0 border-top-0 border-bottom-0" id="chatBody">
+    {% if msgs %}
+      {% for msg in msgs %}
+      <div class="bubble-row {% if msg.sender_id == me_id %}mine{% else %}theirs{% endif %}">
+        <div class="bubble">{{ msg.body }}</div>
+        <div class="bubble-time">{{ msg.created_at.strftime("%H:%M") }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">&#128075;</div>
+        <p>Say hello to {{ other.username }}!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  {# Compose #}
+  <div class="card rounded-top-0 border-top-0">
+    <div class="card-body px-3 py-3">
+      <form method="POST" action="/messages/{{ other.username }}" class="d-flex gap-2 align-items-end">
+        <textarea name="body" id="msgBody" class="form-control"
+                  rows="1" maxlength="1000"
+                  placeholder="Write a message…"></textarea>
+        <button type="submit" id="sendBtn" class="btn btn-primary px-3" disabled>
+          &#10148;
+        </button>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const body = document.getElementById('chatBody');
+  if (body) body.scrollTop = body.scrollHeight;
+
+  const ta  = document.getElementById('msgBody');
+  const btn = document.getElementById('sendBtn');
+  ta.addEventListener('input', () => {
+    btn.disabled = ta.value.trim().length === 0;
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  });
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!btn.disabled) ta.closest('form').submit();
+    }
+  });
+</script>
+{% endblock %}

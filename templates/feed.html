@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Feed — MyApp{% endblock %}
+
+{% block content %}
+<div class="feed-wrap">
+
+  {% if username %}
+  <div class="card compose-card mb-3">
+    <div class="card-body">
+      <form method="POST" action="/feed" id="feedForm">
+        <div class="d-flex gap-3">
+          <div class="av av-md">{{ username[0].upper() }}</div>
+          <div class="flex-grow-1">
+            <textarea name="body" id="feedBody" class="form-control"
+                      rows="2" maxlength="500"
+                      placeholder="What's on your mind?"></textarea>
+            {% set g_id = "feed" %}{% set g_btn_id = "feedBtn" %}
+            {% include "_graffiti.html" %}
+            <hr class="compose-divider">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <span id="feedCount" class="post-meta">0 / 500</span>
+                <button type="button" class="btn-draw"
+                        data-bs-toggle="collapse" data-bs-target="#feedGraffiti">
+                  &#127912; Draw
+                </button>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm px-4"
+                      id="feedBtn" disabled>Post</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="card mb-3">
+    <div class="card-body text-center py-3" style="font-size:.88rem; color:var(--muted)">
+      <a href="/login">Sign in</a> or <a href="/register">create an account</a> to post.
+    </div>
+  </div>
+  {% endif %}
+
+  <p class="section-label">Latest posts</p>
+
+  {% if posts %}
+  <div class="d-flex flex-column gap-2">
+    {% for post in posts %}
+    <div class="card post-card card-hover">
+      <div class="card-body">
+        <div class="d-flex gap-3">
+          <a href="/u/{{ post.author.username }}" class="text-decoration-none">
+            <div class="av av-md">
+              {% if post.author.avatar %}
+                <img src="{{ url_for('static', filename='uploads/' ~ post.author.avatar) }}" alt="">
+              {% else %}
+                {{ post.author.username[0].upper() }}
+              {% endif %}
+            </div>
+          </a>
+          <div class="flex-grow-1 min-w-0">
+            <div class="d-flex align-items-baseline gap-2 mb-1">
+              <a href="/u/{{ post.author.username }}" class="author-link">{{ post.author.username }}</a>
+              <span class="post-meta">{{ post.created_at.strftime("%b %d · %H:%M") }}</span>
+              {% if username and post.author.username == username %}
+              <form method="POST" action="/post/{{ post.id }}/delete" class="ms-auto">
+                <input type="hidden" name="next" value="/feed">
+                <button type="submit" class="btn-delete-post" title="Delete post"
+                        onclick="return confirm('Delete this post?')">&#10005;</button>
+              </form>
+              {% endif %}
+            </div>
+            {% if post.body %}<p class="post-body mb-0">{{ post.body }}</p>{% endif %}
+            {% if post.image %}
+            <div class="{% if post.body %}mt-2{% endif %}">
+              <img src="{{ url_for('static', filename='uploads/' ~ post.image) }}"
+                   class="post-drawing" alt="graffiti">
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">&#128172;</div>
+      <p>No posts yet — be the first!</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% if username %}
+<script>
+  const ta  = document.getElementById('feedBody');
+  const cnt = document.getElementById('feedCount');
+  const btn = document.getElementById('feedBtn');
+  ta.addEventListener('input', () => {
+    cnt.textContent = ta.value.length + ' / 500';
+    if (ta.value.trim().length > 0) btn.disabled = false;
+    else if (!document.getElementById('feedDrawingData').value) btn.disabled = true;
+  });
+</script>
+{% endif %}
+{% endblock %}

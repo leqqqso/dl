@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Set up 2FA — MyApp{% endblock %}
+
+{% block content %}
+<div style="max-width:480px; margin:0 auto;">
+  <a href="/user" class="text-decoration-none d-inline-flex align-items-center gap-1 mb-3"
+     style="font-size:.88rem; color:var(--muted)">&#8592; Back to my page</a>
+
+  <div class="card">
+    <div class="card-body p-4">
+      <h5 class="fw-bold mb-1">&#128241; Set up two-factor authentication</h5>
+      <p class="text-muted small mb-4">Scan the QR code with your authenticator app, then enter the 6-digit code to confirm.</p>
+
+      <div class="text-center mb-4">
+        <img src="data:image/png;base64,{{ qr_b64 }}" alt="QR code"
+             style="width:200px;height:200px;border-radius:.5rem;border:1px solid var(--border)">
+      </div>
+
+      <p class="text-muted small text-center mb-1">Can't scan? Enter this key manually:</p>
+      <div class="text-center mb-4">
+        <code class="fw-bold" style="letter-spacing:.15em;font-size:1rem">{{ secret }}</code>
+      </div>
+
+      <form method="POST" action="/settings/2fa/setup">
+        <div class="mb-3">
+          <label class="form-label">Verification code</label>
+          <input type="text" name="code" class="form-control form-control-lg text-center"
+                 inputmode="numeric" pattern="\d{6}" maxlength="6"
+                 placeholder="000000" autocomplete="one-time-code" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Activate 2FA</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
